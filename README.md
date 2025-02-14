@@ -6,7 +6,7 @@
 
 MultiAgents
 
-### Poet | Checker | Manager
+### Poet | Color Checker | Manager
 
 ![alttext](./docs/scrn1.png)
 
