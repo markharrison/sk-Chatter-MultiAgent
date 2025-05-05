@@ -1,6 +1,6 @@
 # Semantic Kernel - Chatter-MultiAgent
 
-14 Multi 2024
+14 February 2025
 
 ## Overview
 
