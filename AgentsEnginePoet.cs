@@ -8,14 +8,71 @@ using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
 
 namespace ChatterMultiAgent
 {
+
+    public class LastMessageReducer : IChatHistoryReducer
+    {
+        //public string ReduceHistory(IReadOnlyList<ChatMessageContent> history)
+        //{
+        //    // Get only the last message which is sufficient for our selection logic
+        //    if (history.Count > 0)
+        //    {
+        //        var lastMessage = history[^1];
+
+        //        // Match the filtering logic used in ReduceAsync
+        //        if (lastMessage.Role == AuthorRole.Assistant)
+        //        {
+        //            return $"{lastMessage.AuthorName}: {lastMessage.Content}";
+        //        }
+        //    }
+        //    return string.Empty;
+        //}
+
+        public Task<IEnumerable<ChatMessageContent>?> ReduceAsync(IReadOnlyList<ChatMessageContent> history, CancellationToken cancellationToken = default)
+        {
+            // For the async version, return only the last message if available
+            if (history.Count > 0)
+            {
+                var lastMessage = history[^1];
+
+                // Make sure this message is actually from an agent (not system/user)
+                if (lastMessage.Role == AuthorRole.Assistant)
+                {
+                    if (lastMessage.AuthorName == AgentsEnginePoet.colorCheckerAgentName && lastMessage.Content != null)
+                    {
+                        if (!(lastMessage.Content.StartsWith("DULL") || lastMessage.Content.StartsWith("COLORFUL")))
+                        {
+                            lastMessage.Content = "DULL"; // Default fallback
+                        }
+                    }
+
+                    if (lastMessage.AuthorName == AgentsEnginePoet.managerAgentName && lastMessage.Content != null)
+                    {
+                        if (!(lastMessage.Content.StartsWith("POEM APPROVED") || lastMessage.Content.StartsWith("POEM REJECTED")))
+                        {
+                            lastMessage.Content = "POEM REJECTED"; // Default fallback
+                        }
+                    }
+
+                    return Task.FromResult<IEnumerable<ChatMessageContent>?>(new[] { lastMessage });
+                }
+            }
+            return Task.FromResult<IEnumerable<ChatMessageContent>?>(Array.Empty<ChatMessageContent>());
+        }
+    }
+
+
+
+
     public class AgentsEnginePoet
     {
         private readonly Kernel _kernel;
-        string? poetAgentName;
+
+        public static string poetAgentName { get; private set; } = "Poet-Agent";
+        public static string colorCheckerAgentName { get; private set; } = "ColorChecker-Agent";
+        public static string managerAgentName { get; private set; } = "Manager-Agent";
+
         string? poetAgentInstruction;
-        string? colorCheckerAgentName;
         string? colorCheckerAgentInstruction;
-        string? managerAgentName;
         string? managerAgentInstruction;
         string? terminationFunctionInstruction;
         string? selectionFunctionInstruction;
@@ -23,10 +80,6 @@ namespace ChatterMultiAgent
         public AgentsEnginePoet(Kernel kernel)
         {
             _kernel = kernel;
-
-            poetAgentName = "Poet-Agent";
-            colorCheckerAgentName = "ColorChecker-Agent";
-            managerAgentName = "Manager-Agent";
 
             poetAgentInstruction = $$$"""
             You are a poet.
@@ -36,8 +89,8 @@ namespace ChatterMultiAgent
 
             colorCheckerAgentInstruction = $$$"""
             You are a color detection agent. Your response must start strictly with either "COLORFUL -" or "DULL", with no additional commentary or formatting.
-            Your task is to validate whether the last message written by '{{{poetAgentName}}}' includes one or more of the following color names (case-insensitive match):
-            "red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "black", "white", "gray", "violet", "magenta", "turquoise", "maroon", "amber".
+            Your task is to validate whether the last message written by '{{{poetAgentName}}}' includes one or more of the following color names (case-insensitive match / exact word match):
+            "red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "black", "white", "gray", "grey", "violet", "magenta", "turquoise", "maroon", "amber", "crimson", "indigo", "teal", "lavender", "beige", "gold", "silver", "copper", "peach", "lime", "olive", "navy", "aqua", "coral", "charcoal".
             If the poem includes one or more valid color names, respond with: "COLORFUL -" followed by a comma-separated list of the color names found .
             If no valid color names are found, respond with: "DULL" .
             """;
@@ -135,6 +188,8 @@ namespace ChatterMultiAgent
 
                                         HistoryVariableName = "lastmessage",
 
+                                        HistoryReducer = new LastMessageReducer(),
+
                                         MaximumIterations = 12,
                                     },
 
@@ -145,6 +200,8 @@ namespace ChatterMultiAgent
                                         InitialAgent = PoetAgent,
 
                                         HistoryVariableName = "lastmessage",
+
+                                        HistoryReducer = new LastMessageReducer(),
 
                                         ResultParser = (result) =>
                                         {
@@ -168,6 +225,22 @@ namespace ChatterMultiAgent
                 {
                     var contentText = content.Content;
                     var AgentName = content.AuthorName;
+
+                    if (AgentName == AgentsEnginePoet.colorCheckerAgentName && contentText != null)
+                    {
+                        if (!(contentText.StartsWith("DULL") || contentText.StartsWith("COLORFUL")))
+                        {
+                            contentText = "DULL"; // Default fallback
+                        }
+                    }
+
+                    if (AgentName == AgentsEnginePoet.managerAgentName && contentText != null)
+                    {
+                        if (!(contentText.StartsWith("POEM APPROVED") || contentText.StartsWith("POEM REJECTED")))
+                        {
+                            contentText = "POEM REJECTED"; // Default fallback
+                        }
+                    }
 
                     Console.ForegroundColor = GetAgentColor(AgentName);
                     Console.WriteLine($"{AgentName} : {contentText}");
