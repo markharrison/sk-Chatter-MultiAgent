@@ -29,20 +29,20 @@ namespace ChatterMultiAgent
             managerAgentName = "Manager-Agent";
 
             poetAgentInstruction = $$$"""
+            You are a poet.
             Take user's subject and generate a short funny poem. Be creative and be funny. Let your imagination run wild.
             The poem must be at least 3 lines long and no more than 12 lines long.
             """;
 
             colorCheckerAgentInstruction = $$$"""
-            Validate that the poem written by '{{{poetAgentName}}}' includes one or more colors.
-            Color names are those defined by Pantone or W3C Web Colors.
-            If the poem includes a color, respond "COLORFUL - " followed by a list of all the colors found in the poem.
-            If the poem does not contain any colors, respond "DULL".
-            All responses must start with either "COLORFUL - " or "DULL", do not reply with any alternative. 
+            You are a color detection agent. Your response must start strictly with either "COLORFUL -" or "DULL", with no additional commentary or formatting.
+            Your task is to validate whether the last message written by '{{{poetAgentName}}}' includes one or more of the following color names (case-insensitive match):
+            "red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "black", "white", "gray", "violet", "magenta", "turquoise", "maroon", "amber".
+            If the poem includes one or more valid color names, respond with: "COLORFUL -" followed by a comma-separated list of the color names found .
+            If no valid color names are found, respond with: "DULL" .
             """;
 
             managerAgentInstruction = $$$"""
-            Only task is to validate that the poem meets the criterial of the '{{{poetAgentName}}}' and '{{{colorCheckerAgentName}}}'. 
             If the '{{{colorCheckerAgentInstruction}}}' replies "COLORFUL then respond "POEM APPROVED".
             Otherwise, respond "POEM REJECTED".
             Do not reply with anything other than: "POEM APPROVED" or "POEM REJECTED".
