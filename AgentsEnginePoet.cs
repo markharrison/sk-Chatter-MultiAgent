@@ -1,8 +1,9 @@
 ﻿using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.SemanticKernel.Agents.Chat;
 using Microsoft.SemanticKernel.Agents;
+using Microsoft.SemanticKernel.Agents.Chat;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.AzureOpenAI;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 #pragma warning disable SKEXP0001, SKEXP0110
 
@@ -141,12 +142,20 @@ namespace ChatterMultiAgent
         {
             await Task.Run(() => { });
 
+
+
             ChatCompletionAgent PoetAgent =
                new()
                {
                    Instructions = poetAgentInstruction,
                    Name = poetAgentName,
-                   Kernel = _kernel
+                   Kernel = _kernel,
+                   Arguments = new KernelArguments(
+                        new AzureOpenAIPromptExecutionSettings()
+                        {
+                            Temperature = 0.9, 
+                            TopP = 0.9, 
+                        })
                };
 
             ChatCompletionAgent ColorCheckerAgent =
@@ -154,7 +163,13 @@ namespace ChatterMultiAgent
                   {
                       Instructions = colorCheckerAgentInstruction,
                       Name = colorCheckerAgentName,
-                      Kernel = _kernel
+                      Kernel = _kernel,
+                      Arguments = new KernelArguments(
+                        new AzureOpenAIPromptExecutionSettings()
+                        {
+                            Temperature = 0.01,
+                            TopP = 0.01,
+                        })
                   };
 
             ChatCompletionAgent ManagerAgent =
@@ -162,7 +177,13 @@ namespace ChatterMultiAgent
                 {
                     Instructions = managerAgentInstruction,
                     Name = managerAgentName,
-                    Kernel = _kernel
+                    Kernel = _kernel,
+                    Arguments = new KernelArguments(
+                        new AzureOpenAIPromptExecutionSettings()
+                        {
+                            Temperature = 0.01,
+                            TopP = 0.01,
+                        })
                 };
 
             KernelFunction selectionFunction = AgentGroupChat.CreatePromptFunctionForStrategy(selectionFunctionInstruction ?? "", safeParameterNames: "lastmessage");
@@ -202,6 +223,7 @@ namespace ChatterMultiAgent
                                         HistoryVariableName = "lastmessage",
 
                                         HistoryReducer = new LastMessageReducer(),
+
 
                                         ResultParser = (result) =>
                                         {
