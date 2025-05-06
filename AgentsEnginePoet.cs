@@ -90,7 +90,7 @@ namespace ChatterMultiAgent
 
             colorCheckerAgentInstruction = $$$"""
             You are a color detection agent. Your response must start strictly with either "COLORFUL -" or "DULL", with no additional commentary or formatting.
-            Your task is to validate whether the last message written by '{{{poetAgentName}}}' includes the name of a color (case-insensitive match / exact word match):
+            Your task is to validate whether the last message written by '{{{poetAgentName}}}' includes the name of a color (case-insensitive match):
             If the poem includes one or more color names, respond with: "COLORFUL -" followed by a comma-separated list of the color names found .
             If no valid color names are found, respond with: "DULL" .
             """;
